@@ -3,8 +3,9 @@ import os
 import requests
 
 # Gemini API のエンドポイントと API キーは環境変数から取得
-GEMINI_API_URL = os.environ.get("GEMINI_API_URL", "https://api.gemini.example.com/v1/search")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
+
+# プロンプト作成と、構造化出力
 
 def fetch_latest_articles(category: str) -> dict:
     """
@@ -25,6 +26,6 @@ def fetch_latest_articles(category: str) -> dict:
         "Authorization": f"Bearer {GEMINI_API_KEY}",
         "Content-Type": "application/json"
     }
-    response = requests.post(GEMINI_API_URL, json=payload, headers=headers)
+    response = requests.post(json=payload, headers=headers)
     response.raise_for_status()
     return response.json()
