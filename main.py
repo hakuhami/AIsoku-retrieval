@@ -1,5 +1,5 @@
 # main.py
-from update_firestore import shift_updates, update_latest_articles
+from components.update_firestore import shift_updates, update_latest_articles
 
 def main():
     try:
