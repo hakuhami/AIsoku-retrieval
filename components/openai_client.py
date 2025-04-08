@@ -1,41 +1,144 @@
 # openai_client.py
 import os
 import json
-import openai
+from openai import OpenAI
 
-# OpenAI の API キーは環境変数から取得する
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+# OpenAI の API キーは環境変数から取得
+def get_openai_key():
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+    return api_key
+
+model_name = "gpt-4o-search-preview"
 
 def fetch_latest_articles(category: str) -> dict:
     """
-    OpenAI GPT-4o を呼び出し、指定カテゴリの最新記事上位3件を取得する。
-    出力例（構造化された JSON）：
-      {
-         "1st": { "title": "記事タイトル1", "content": "要約1", "url": "https://..." },
-         "2st": { "title": "記事タイトル2", "content": "要約2", "url": "https://..." },
-         "3st": { "title": "記事タイトル3", "content": "要約3", "url": "https://..." }
+    指定されたカテゴリに基づき、OpenAI GPT-4o (モデル:"gpt-4o-search-preview") を利用して、
+    最新の{derivedCategory}記事上位3件の情報を取得する関数です。
+    
+    引数:
+      category: "news" または "tech"
+      
+    ※ "news" が指定された場合、{derivedCategory} は「ニュース」
+       "tech" が指定された場合、{derivedCategory} は「技術記事」となります。
+    
+    Structured Output の JSON 形式:
+    {
+      "{derivedCategory}": {
+        "1st": {
+          "title": "string",
+          "content": "string",
+          "url": "string"
+        },
+        "2nd": { ... },
+        "3rd": { ... }
       }
+    }
     """
-    system_message = (
-        f"You are a web search assistant. Using your integrated web search function, fetch the top 3 latest articles for the category '{category}'. "
-        "Return a JSON object with keys \"1st\", \"2st\", \"3st\" where each value is an object containing 'title', 'content', and 'url'. "
-        "Output only the JSON without any extra text."
-    )
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_message},
-            ],
-            temperature=0.0,
-            max_tokens=500,
-        )
-    except Exception as e:
-        raise RuntimeError(f"Failed to call OpenAI API: {e}")
+    # カテゴリに応じた表示用名称を設定
+    if category.lower() == "news":
+        derivedCategory = "ニュース"
+    elif category.lower() == "tech":
+        derivedCategory = "技術記事"
+    else:
+        raise ValueError("Invalid category. Use 'news' or 'tech'.")
+      
+    prompt = """貴方はAIに関する専門家です。
+    私は日々AIに関する情報を収集しているのですが、AI技術の進歩は非常に早く、情報収集は非常に大変です。
+    そこで、貴方には最新のAIに関するニュースを収集し、私に簡潔に教えて欲しいです。
+    具体的には、過去24時間にweb上に投稿されたAIに関するニュースの中から、特に重要だと考えられるものを3つ選び、それぞれのニュースのタイトル、ニュースを簡潔に要約した内容、URL1個を教えて欲しいです。 
+    なお、情報源に指定は無いですが、出力は全て日本語で行ってください。
 
-    output_text = response.choices[0].message.content.strip()
-    try:
-        data = json.loads(output_text)
-    except Exception as e:
-        raise ValueError(f"Error parsing JSON from GPT-4o output: {e}\nOutput was: {output_text}")
-    return data
+    注意点として、出力は以下に示すJSON形式に従ってください。 
+    選択した3つのニュースは、重要度の高い順に「1st」、「2st」、「3st」として格納してください。
+    なお、ニュースのタイトルは「title」、ニュースを簡潔に要約した内容は「content」、URLは「url」というキーを使ってください。
+
+    {
+      "news": {
+        "1st": {
+          "title": "string",
+          "content": "string",
+          "url": "string"
+        },
+        "2st": {
+          "title": "string",
+          "content": "string",
+          "url": "string"
+        },
+        "3st": {
+          "title": "string",
+          "content": "string",
+          "url": "string"
+        }
+      }
+    }"""
+
+    client = OpenAI(api_key=get_openai_key())
+    response = client.chat.completions.create(
+        model=model_name,
+        web_search_options={
+            "search_context_size": "medium",
+            "user_location": {
+                "type": "approximate",
+                "approximate": {
+                    "country": "JP",
+                },
+            },
+        },
+        messages=[
+            {"role": "system", "content": "あなたはAIに関する専門家です。"},
+            {"role": "user", "content": prompt}
+        ],
+        functions=[
+            {
+                "name": "get_latest_articles",
+                "description": f"最新のAIに関する{derivedCategory}記事3件をjsonデータとして返します",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        f"{category}": {
+                            "type": "object",
+                            "properties": {
+                                "1st": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "content": {"type": "string"},
+                                        "url": {"type": "string"}
+                                    },
+                                    "required": ["title", "content", "url"]
+                                },
+                                "2nd": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "content": {"type": "string"},
+                                        "url": {"type": "string"}
+                                    },
+                                    "required": ["title", "content", "url"]
+                                },
+                                "3rd": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "content": {"type": "string"},
+                                        "url": {"type": "string"}
+                                    },
+                                    "required": ["title", "content", "url"]
+                                }
+                            },
+                            "required": ["1st", "2nd", "3rd"]
+                        }
+                    },
+                    "required": [f"{category}"]
+                }
+            }
+        ],
+        function_call={"name": "get_latest_articles"},
+        temperature=0
+    )
+    
+    # Extract only the content generated by GPT from the response data
+    function_args = response.choices[0].message.function_call.arguments
+    return json.loads(function_args)
