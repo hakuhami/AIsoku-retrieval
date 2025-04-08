@@ -5,7 +5,7 @@ def main():
     try:
         print("シフト処理を開始します...")
         shift_updates()
-        print("最新記事を Gemini API から取得中...")
+        print("最新記事を GPT-4o API から取得中...")
         update_latest_articles()
         print("更新が完了しました。")
     except Exception as e:

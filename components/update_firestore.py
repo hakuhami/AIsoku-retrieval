@@ -1,7 +1,7 @@
 # update_firestore.py
 from datetime import datetime
 from firebase_utils import db
-from gemini_client import fetch_latest_articles
+from components.openai_client import fetch_latest_articles
 
 def shift_updates():
     """
@@ -27,7 +27,7 @@ def shift_updates():
 
 def update_latest_articles():
     """
-    Gemini API を利用して、"news" と "tech" の最新記事上位3件を取得し、Firestore の "v1" に格納する処理
+    Open AI API を利用して、"news" と "tech" の最新記事上位3件を取得し、Firestore の "v1" に格納する処理
     """
     news_data = fetch_latest_articles("news")
     tech_data = fetch_latest_articles("tech")
