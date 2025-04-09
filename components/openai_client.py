@@ -143,7 +143,10 @@ def fetch_latest_articles(category: str):
     
     response = client.responses.create(
         model="gpt-4o-2024-11-20",
-        tools=[{"type": "web_search_preview"}],
+        tools=[{
+            "type": "web_search_preview",
+            "search_context_size": "high",
+        }],
         input=prompt
     )
     
