@@ -1,7 +1,6 @@
-# update_firestore.py
-from datetime import datetime
-from firebase_utils import db
+from components.firebase_utils import db
 from components.perplexity_client import fetch_latest_articles
+import json
 
 def shift_updates():
     """
@@ -11,32 +10,86 @@ def shift_updates():
       - v3 のデータを v4 にコピー
       - v4 のデータを v5 にコピー
       - v5 のデータは削除する
-    ※各更新はコレクション名として扱い、各コレクションのドキュメント名は "data" とする前提です。
+    ※各更新はコレクション名として扱い、各コレクションには "news" と "tech" の2つのドキュメントが存在する前提です。
     """
-    for i in range(4, 0, -1):
-        src = f"v{i}"
-        dst = f"v{i+1}"
-        src_ref = db.collection(src).document("data")
-        src_doc = src_ref.get()
-        if src_doc.exists:
-            db.collection(dst).document("data").set(src_doc.to_dict())
+    # ドキュメント名のリスト
+    doc_names = ["news", "tech"]
+    
+    # 各ドキュメントごとにシフト処理を行う
+    for doc_name in doc_names:
+        for i in range(4, 0, -1):
+            src = f"v{i}"
+            dst = f"v{i+1}"
+            src_ref = db.collection(src).document(doc_name)
+            src_doc = src_ref.get()
+            if src_doc.exists:
+                db.collection(dst).document(doc_name).set(src_doc.to_dict())
+    
     # v5 のデータを削除
-    v5_ref = db.collection("v5").document("data")
-    if v5_ref.get().exists:
-        v5_ref.delete()
+    for doc_name in doc_names:
+        v5_ref = db.collection("v5").document(doc_name)
+        if v5_ref.get().exists:
+            v5_ref.delete()
 
 def update_latest_articles():
     """
-    Open AI API を利用して、"news" と "tech" の最新記事上位3件を取得し、Firestore の "v1" に格納する処理
+    Perplexity API を利用して、"news" と "tech" の最新記事上位3件を取得し、
+    Firestore の "v1" コレクションの対応するドキュメントに格納する処理
     """
-    news_data = fetch_latest_articles("news")
-    tech_data = fetch_latest_articles("tech")
+    # news記事を取得
+    news_response = fetch_latest_articles("news")
     
-    update_data = {
-        "news": news_data,   # 例: {"1st": {...}, "2st": {...}, "3st": {...}}
-        "tech": tech_data,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    news_response = json.loads(news_response)
+    # articlesキーの値を取得
+    news_articles = news_response["articles"]
+    # "v1"コレクションの"news"ドキュメントに保存
+    db.collection("v1").document("news").set(news_articles)
     
-    # "v1" コレクションのドキュメント "data" に新データを保存
-    db.collection("v1").document("data").set(update_data)
+    # # strが返って来るため、JSONとしてパース
+    # if isinstance(news_response, str):        
+    #     news_response = json.loads(news_response)
+    #     # articlesキーの値を取得
+    #     news_articles = news_response["articles"]
+    #     # "v1"コレクションの"news"ドキュメントに保存
+    #     db.collection("v1").document("news").set(news_articles)
+    
+    # # 万が一辞書型の場合の処理
+    # if isinstance(news_response, dict):
+    #     if "articles" in news_response:
+    #         # articlesキーの値を取得
+    #         news_articles = news_response["articles"]
+    #         # "v1"コレクションの"news"ドキュメントに保存
+    #         db.collection("v1").document("news").set(news_articles)
+    #     else:
+    #         db.collection("v1").document("news").set(news_response)
+    
+    # tech記事も同様に処理
+    tech_response = fetch_latest_articles("tech")
+    
+    tech_response = json.loads(tech_response)        
+    # articlesキーの値を取得
+    tech_articles = tech_response["articles"]
+    # "v1"コレクションの"tech"ドキュメントに保存
+    db.collection("v1").document("tech").set(tech_articles)
+    
+    # # 文字列の場合はJSONとしてパース
+    # if isinstance(tech_response, str):
+    #     tech_response = json.loads(tech_response)        
+    #     # articlesキーの値を取得
+    #     tech_articles = tech_response["articles"]
+    #     # "v1"コレクションの"tech"ドキュメントに保存
+    #     db.collection("v1").document("tech").set(tech_articles)
+    
+    # # 辞書型の場合、通常の処理を続行
+    # if isinstance(tech_response, dict):
+    #     if "articles" in tech_response:
+    #         # articlesキーの値を取得
+    #         tech_articles = tech_response["articles"]
+    #         # "v1"コレクションの"tech"ドキュメントに保存
+    #         db.collection("v1").document("tech").set(tech_articles)
+    #         print(f"techデータを保存しました: {tech_articles.keys()}")
+    #     else:
+    #         # articlesキーがない場合は、データ全体を保存
+    #         db.collection("v1").document("tech").set(tech_response)
+    #         print(f"techデータを代替形式で保存しました: {tech_response.keys()}")
+    

@@ -1,4 +1,3 @@
-# perplexity_client.py
 import os
 import json
 import requests
@@ -7,7 +6,7 @@ from typing import Dict
 
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 api_key = os.environ.get("PERPLEXITY_API_KEY")
-model_name = "sonar-reasoning-pro"
+model_name = "sonar-pro"
 
 class ArticleInfo(BaseModel):
     """個別の記事情報を表すモデル"""
@@ -23,9 +22,9 @@ class RankedArticles(BaseModel):
 
 class AnswerFormat(BaseModel):
     """APIレスポンスの最終形式"""
-    category: Dict[str, RankedArticles] = Field(..., description="カテゴリごとの記事データ")
+    articles: Dict[str, RankedArticles] = Field(..., description="カテゴリごとの記事データ")
 
-def fetch_latest_articles(category: str) -> dict:
+def fetch_latest_articles(category: str):
     # ニュース記事を取得
     if category.lower() == "news":
         system_prompt = f"""貴方はAIに関する専門家です。貴方には、毎日AIに関する最新情報を速報として、日本語で詳細に提供するタスクが与えられています。"""
