@@ -1,6 +1,3 @@
-from dotenv import load_dotenv
-load_dotenv()
-
 from components.update_firestore import shift_updates, update_latest_articles
 
 def main():
