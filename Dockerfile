@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM python:3.13.2
+FROM python:3.12.2
 
 # 作業ディレクトリを作成
 WORKDIR /app
