@@ -1,7 +1,7 @@
 # update_firestore.py
 from datetime import datetime
 from firebase_utils import db
-from components.openai_client import fetch_latest_articles
+from components.perplexity_client import fetch_latest_articles
 
 def shift_updates():
     """

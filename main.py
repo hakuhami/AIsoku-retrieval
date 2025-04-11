@@ -20,17 +20,17 @@
 
 
 
-# gptのapiが動いているかのテスト
+# apiが動いているかのテスト
 import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from components.openai_client import fetch_latest_articles
+from components.perplexity_client import fetch_latest_articles
 
 def main():
     try:
-        print("最新ニュース記事を GPT-4o API から取得中...")
+        print("最新ニュース記事を API から取得中...")
         
         # fetch_latest_articles("news")の結果をターミナルに出力
         print("\n=== AIに関する最新ニュース ===")
