@@ -10,12 +10,8 @@ def main():
     try:
         print("\n=== 以下はLLMによる取得データ ===")
         
-        news_result = fetch_latest_articles("news")
-        print(news_result)
-        
-        # news_result = fetch_latest_articles("news")
-        # print(news_result)
-        
+        news_result = fetch_latest_articles("tech") # "news" or "tech"
+        print(news_result)        
         print("=====================================")
         
     except Exception as e:
